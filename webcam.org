@@ -1,0 +1,93 @@
+#+title: Webcam
+#+property: header-args :tangle webcam.sh :auto
+#+auto_tangle: t
+* Функции скрипта
+ * Фото
+ * Видео
+ * Стрим по интернету
+* Зависимости
+ * ffmpeg
+ * v4l-utils
+** Установка
+*** Ubuntu/Debian
+sudo apt-get install ffmpeg v4l-utils
+*** Arch
+sudo pacman -Sy ffmpeg v4l-utils
+* Ключи
+| Ключи | Опции конфига | Значение               |
+|-------+---------------+------------------------|
+| -h    |               | вывод помощи по ключам |
+| -c    |               | принять на вход конфиг |
+| -p    | photo         | режим фотографирования |
+| -v    | video         | режим видеосъемки      |
+| -o    | output        | файл                   |
+* Строение скрипта
+./webcam.sh устройство ключи
+** Изучение конфига (если есть)
+#+begin_src bash
+#!/bin/bash
+source config.shlib
+helptxt() {
+    echo '
+ -h | вывод помощи по ключам
+ -c | принять на вход конфиг
+ -p | режим фотографирования
+ -v | режим видеосъемки
+ -s | режим стрима
+ -o | файл
+'
+    echo 'Возможные устройства:'
+    v4l2-ctl --list-devices
+}
+for i in $(seq 1 9); do
+    if [ "${!i}" = "-c" ]; then
+        i=$(( i + 1 ))
+        a="${!i}"
+        photo="$(config_get $a photo)"
+        video="$(config_get $a video)"
+        output="$(config_get $a output)"
+    fi
+done
+#+end_src
+
+#+RESULTS:
+| -с | принять на вход конфигn-h | вывод помощи по ключамn-p | режим фотографированияn-v | режим видеосъемкиn-s | режим стримаn-o | файлn |
+
+** Сбор переменных
+#+begin_src bash
+if [ -z $device ] && [ -e $1 ]; then
+    device=$1
+    shift
+else
+    echo "Нужно ввести устройство"
+fi
+while [ -n "$1" ]; do
+    case "$1" in
+    -p) photo=true ;;
+    -v) video=true ;;
+    -o) output=$2
+        shift ;;
+    --) shift
+        break ;;
+    ,*) helptxt ;;
+    esac
+    shift
+done
+#+end_src
+** Фото
+#+begin_src bash
+if [ $photo ] && [ $output ]; then
+    ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 $output
+elif [ $photo ]; then
+    ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 photo.png
+#+end_src
+** Видео
+#+begin_src bash
+elif [ $video ] && [ $output ]; then
+    echo 'Нажми q, чтобы завершить'
+    ffmpeg -hide_banner -loglevel error -f v4l2 -r 30 -s 1920x1080 -i $device $output
+elif [ $video ]; then
+    echo 'Нажми q, чтобы завершить'
+    ffmpeg -hide_banner -loglevel error -f v4l2 -framerate 30 -video_size 1920x1080 -i $device video.mp4
+fi
+#+end_src
