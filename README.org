@@ -1,4 +1,4 @@
-#+title: Webcam
+#+title: WEBCam OPerations
 #+property: header-args :tangle webcam.sh :auto
 #+auto_tangle: t
 * Функции скрипта
@@ -10,9 +10,13 @@
  * v4l-utils
 ** Установка
 *** Ubuntu/Debian
+#+begin_src
 sudo apt-get install ffmpeg v4l-utils
+#+end_src
 *** Arch
+#+begin_src
 sudo pacman -Sy ffmpeg v4l-utils
+#+end_src
 * Ключи
 | Ключи | Опции конфига | Значение               |
 |-------+---------------+------------------------|
