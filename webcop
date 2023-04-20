@@ -12,28 +12,32 @@ helptxt() {
     echo 'Возможные устройства:'
     v4l2-ctl --list-devices
 }
+
 for i in $(seq 1 9); do
     if [ "${!i}" = "-c" ]; then
         i=$(( i + 1 ))
-        a="${!i}"
-        photo="$(config_get $a photo)"
-        video="$(config_get $a video)"
-        output="$(config_get $a output)"
+        photo="$(config_get ${!i} photo)"
+        device="$(config_get ${!i} device)"
+        video="$(config_get ${!i} video)"
+        output="$(config_get ${!i} output)"
     fi
 done
 
 if [ -z $device ] && [ -e $1 ]; then
     device=$1
     shift
-else
+elif [ ! -e $device ]; then
     echo "Нужно ввести устройство"
+    exit 1
 fi
+
 while [ -n "$1" ]; do
     case "$1" in
     -p) photo=true ;;
     -v) video=true ;;
     -o) output=$2
         shift ;;
+    -c) shift ;;
     --) shift
         break ;;
     *) helptxt ;;
@@ -43,13 +47,17 @@ done
 
 if [ $photo ] && [ $output ]; then
     ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 $output
+    echo "Фото снято"
 elif [ $photo ]; then
     ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 photo.png
+    echo "Фото снято"
 
 elif [ $video ] && [ $output ]; then
     echo 'Нажми q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -r 30 -s 1920x1080 -i $device $output
+    echo "Видео снято"
 elif [ $video ]; then
     echo 'Нажми q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -framerate 30 -video_size 1920x1080 -i $device video.mp4
+    echo "Видео снято"
 fi
