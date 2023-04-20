@@ -1,4 +1,4 @@
-#+title: *WEBC*am *OP*erations
+#+title: WEBCam OPerations
 #+property: header-args :tangle webcop
 #+auto_tangle: t
 * Функции скрипта
