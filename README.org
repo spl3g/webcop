@@ -1,39 +1,50 @@
-#+title: WEBCam OPerations
+#+title: WEBCam OPerations and more
 #+property: header-args :tangle webcop
 #+auto_tangle: t
 * Функции скрипта
  * Фото
  * Видео
- * Стрим по интернету
+ * Стрим рабочего стола, как отдельного устройства
 * Установка
 ** Зависимости
- * ffmpeg
- * v4l-utils
+- ffmpeg
+- v4l-utils
+Если хотите использовать режим стрима:
+- v4l2loopback-dkms
+Опциональные для wayland:
+- wf-recorder
 *** Ubuntu/Debian
 #+begin_src
-sudo apt-get install ffmpeg v4l-utils
+sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms
 #+end_src
 *** Arch
 #+begin_src
-sudo pacman -Sy ffmpeg v4l-utils
+sudo pacman -Sy ffmpeg v4l-utils v4l2loopback-dkms
 #+end_src
-** Что нужно делать
+** Загрузка скрипта
 #+begin_src
 git clone https://github.com/spl3g/webcop.git
+cd webcop
 chmod +x webcop
 # Profit ;)
+#+end_src
+** Стрим
+Если вы хотите использовать возможности стриминга экрана, то после каждой перезагрузки нужно выполнять
+#+begin_src
+sudo modprobe v4l2loopback
 #+end_src
 * Ключи
 | Ключи | Опции конфига | Значение               |
 |-------+---------------+------------------------|
 | -h    |               | вывод помощи по ключам |
 | -c    |               | принять на вход конфиг |
-|       | device        | устройство ввода       |
+| -d    | device        | устройство ввода       |
 | -p    | photo         | режим фотографирования |
+| -s    | stream        | режим стрима           |
 | -v    | video         | режим видеосъемки      |
 | -o    | output        | файл                   |
 * Строение скрипта
-./webcam.sh устройство ключи
+./webcop ключи
 ** Изучение конфига (если есть)
 #+begin_src bash
 #!/bin/bash
@@ -52,11 +63,11 @@ helptxt() {
 }
 
 for i in $(seq 1 9); do
-    if [ "${!i}" = "-c" ]; then
+    if [[ "${!i}" = "-c" ]]; then
         i=$(( i + 1 ))
         photo="$(config_get ${!i} photo)"
-        device="$(config_get ${!i} device)"
         video="$(config_get ${!i} video)"
+        device="$(config_get ${!i} device)"
         output="$(config_get ${!i} output)"
     fi
 done
@@ -64,46 +75,75 @@ done
 
 ** Сбор переменных
 #+begin_src bash
-if [ -z $device ] && [ -e $1 ]; then
-    device=$1
-    shift
-elif [ ! -e $device ]; then
-    echo "Нужно ввести устройство"
-    exit 1
-fi
-
-while [ -n "$1" ]; do
+while [[ -n "$1" ]]; do
     case "$1" in
     -p) photo=true ;;
     -v) video=true ;;
     -o) output=$2
         shift ;;
+    -d) device=$2
+        shift ;;
     -c) shift ;;
+    -s) stream=true ;;
     --) shift
         break ;;
     ,*) helptxt ;;
     esac
     shift
 done
+
+if [[ -z $device ]] && [[ -z $stream ]]; then
+    device=/dev/video0
+    echo "Используется устройство по умолчанию - /dev/video0"
+    echo "Другие варианты:"
+    v4l2-ctl --list-devices
+fi
 #+end_src
+
+#+RESULTS:
+| Используется | устройство  | по     | умолчанию | -                            | /dev/video0 |                       |
+| Другие       | варианты:   |        |           |                              |             |                       |
+| Dummy        | video       | device | (0x0000)  | (platform:v4l2loopback-000): |             |                       |
+|              | /dev/video2 |        |           |                              |             |                       |
+|              |             |        |           |                              |             |                       |
+| HP           | TrueVision  | HD     | Camera:   | HP                           | Tru         | (usb-0000:00:14.0-5): |
+|              | /dev/video0 |        |           |                              |             |                       |
+|              | /dev/video1 |        |           |                              |             |                       |
+|              | /dev/media0 |        |           |                              |             |                       |
+|              |             |        |           |                              |             |                       |
+
 ** Фото
 #+begin_src bash
-if [ $photo ] && [ $output ]; then
+if [[ $photo ]] && [[ $output ]]; then
     ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 $output
     echo "Фото снято"
-elif [ $photo ]; then
+elif [[ $photo ]]; then
     ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 photo.png
     echo "Фото снято"
 #+end_src
 ** Видео
 #+begin_src bash
-elif [ $video ] && [ $output ]; then
+elif [[ $video ]] && [[ $output ]]; then
     echo 'Нажми q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -r 30 -s 1920x1080 -i $device $output
+    ffplay $device
     echo "Видео снято"
-elif [ $video ]; then
+elif [[ $video ]]; then
     echo 'Нажми q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -framerate 30 -video_size 1920x1080 -i $device video.mp4
+    ffplay $device
     echo "Видео снято"
+#+end_src
+** Стрим
+#+begin_src bash
+elif [[ $stream ]]; then
+    sdevice=$(v4l2-ctl --list-devices | awk '/v4l2/ { getline; print $1}')
+    if [[ $XDG_BACKEND = "wayland" ]]; then
+        echo "Нажми Ctrl+C, чтобы завершить"
+        wf-recorder --muxer=v4l2 --codec=rawvideo -t --file=/dev/video2 -x yuv420pq
+    else
+        echo "Нажми Ctrl+C, чтобы завершить"
+        ffmpeg -f x11grab -select_region 1 -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 /dev/video2
+    fi
 fi
 #+end_src
