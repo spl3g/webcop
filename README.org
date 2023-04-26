@@ -11,6 +11,7 @@
 - v4l-utils
 Если хотите использовать режим стрима:
 - v4l2loopback-dkms
+- linux-headers
 Опциональные для wayland:
 - wf-recorder
 *** Ubuntu/Debian
@@ -50,14 +51,7 @@ sudo modprobe v4l2loopback
 #!/bin/bash
 source config.shlib
 helptxt() {
-    echo '
- -h | вывод помощи по ключам
- -c | принять на вход конфиг
- -p | режим фотографирования
- -v | режим видеосъемки
- -s | режим стрима
- -o | файл
-'
+    echo -e ' -h | вывод помощи по ключам \n -c | принять на вход конфиг \n -p | режим фотографирования \n -v | режим видеосъемки \n -s | режим стрима \n -o | файл \n'
     echo 'Возможные устройства:'
     v4l2-ctl --list-devices
 }
@@ -67,6 +61,7 @@ for i in $(seq 1 9); do
         i=$(( i + 1 ))
         photo="$(config_get ${!i} photo)"
         video="$(config_get ${!i} video)"
+        stream="$(config_get ${!i} stream)"
         device="$(config_get ${!i} device)"
         output="$(config_get ${!i} output)"
     fi
@@ -92,25 +87,13 @@ while [[ -n "$1" ]]; do
     shift
 done
 
-if [[ -z $device ]] && [[ -z $stream ]]; then
+if [[ -z $device ]] && [[ -z $stream ]] && [[ -n $1 ]]; then
     device=/dev/video0
     echo "Используется устройство по умолчанию - /dev/video0"
     echo "Другие варианты:"
     v4l2-ctl --list-devices
 fi
 #+end_src
-
-#+RESULTS:
-| Используется | устройство  | по     | умолчанию | -                            | /dev/video0 |                       |
-| Другие       | варианты:   |        |           |                              |             |                       |
-| Dummy        | video       | device | (0x0000)  | (platform:v4l2loopback-000): |             |                       |
-|              | /dev/video2 |        |           |                              |             |                       |
-|              |             |        |           |                              |             |                       |
-| HP           | TrueVision  | HD     | Camera:   | HP                           | Tru         | (usb-0000:00:14.0-5): |
-|              | /dev/video0 |        |           |                              |             |                       |
-|              | /dev/video1 |        |           |                              |             |                       |
-|              | /dev/media0 |        |           |                              |             |                       |
-|              |             |        |           |                              |             |                       |
 
 ** Фото
 #+begin_src bash
@@ -124,12 +107,12 @@ elif [[ $photo ]]; then
 ** Видео
 #+begin_src bash
 elif [[ $video ]] && [[ $output ]]; then
-    echo 'Нажми q, чтобы завершить'
+    echo 'Нажмите q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -r 30 -s 1920x1080 -i $device $output
     ffplay $device
     echo "Видео снято"
 elif [[ $video ]]; then
-    echo 'Нажми q, чтобы завершить'
+    echo 'Нажмите q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -framerate 30 -video_size 1920x1080 -i $device video.mp4
     ffplay $device
     echo "Видео снято"
@@ -139,10 +122,10 @@ elif [[ $video ]]; then
 elif [[ $stream ]]; then
     sdevice=$(v4l2-ctl --list-devices | awk '/v4l2/ { getline; print $1}')
     if [[ $XDG_BACKEND = "wayland" ]]; then
-        echo "Нажми Ctrl+C, чтобы завершить"
+        echo "Нажмите Ctrl+C, чтобы завершить"
         wf-recorder --muxer=v4l2 --codec=rawvideo -t --file=/dev/video2 -x yuv420pq
     else
-        echo "Нажми Ctrl+C, чтобы завершить"
+        echo "Нажмите Ctrl+C, чтобы завершить"
         ffmpeg -f x11grab -select_region 1 -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 /dev/video2
     fi
 fi
