@@ -6,6 +6,10 @@
  * Видео
  * Стрим рабочего стола, как отдельного устройства
 * Установка
+** Автоматическая установка
+#+begin_src
+bash -c "$(wget -qO- https://raw.githubusercontent.com/spl3g/webcop/master/install.sh)"
+#+end_src
 ** Зависимости
 - ffmpeg
 - v4l-utils
