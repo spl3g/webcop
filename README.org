@@ -1,4 +1,4 @@
-#+title: WEBCam OPerations and more
+#+title: WEBCam OPerations and more!
 #+property: header-args :tangle webcop
 #+auto_tangle: t
 * Функции скрипта

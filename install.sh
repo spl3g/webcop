@@ -11,21 +11,35 @@ getKernel() {
     fi
 }
 
-read -p "Нужны будут права администратора, вы согласны? [Y/n] " admin
-if [[ $admin == "n" ]]; then
-    exit 0
+read -p "Загрузить скрипт? [Y/n] " scr
+read -p "Установить зависимости? [Y/n] " dep
+
+if [[ $scr == "y" ]] || [[ $scr == "Y" ]] || [[ -z $scr ]]; then
+    echo "Загрузка скрипта..."
+    git clone https://github.com/spl3g/webcop.git
+    cd webcop
+    chmod +x webcop
 fi
 
-if [[ $os =~ "Ubuntu" ]] || [[ $os =~ "Debian" ]]; then
-    sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms linux-headers
-elif [[ $os =~ "Arch" ]] || [[ $os =~ "Mangaro" ]] || [[ $os =~ "Endeavour" ]]; then
-    getKernel
-    sudo pacman -Sy --needed ffmpeg v4l-utils v4l2loopback-dkms $kernel
-else
-    echo "Твоя система еще не поддерживается скриптом"
+if [[ $dep == "y" ]] || [[ $dep == "Y" ]] || [[ -z $dep ]]; then
+    echo "Установка зависимостей..."
+    read -p "Нужны будут права администратора, вы согласны? [Y/n] " admin
+    if [[ $admin == "n" ]] || [[ $admin == "N" ]]; then
+        exit 0
+    fi
+
+    if [[ $os =~ "Ubuntu" ]] || [[ $os =~ "Debian" ]]; then
+        sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms linux-headers
+    elif [[ $os =~ "Arch" ]] || [[ $os =~ "Mangaro" ]] || [[ $os =~ "Endeavour" ]]; then
+        getKernel
+        sudo pacman -Sy --needed ffmpeg v4l-utils v4l2loopback-dkms $kernel
+    else
+        echo "Ваша система еще не поддерживается скриптом"
+    fi
 fi
-read -p "Хотите перезагрузиться сейчас или сделать это позже? [y/N]: " reboot
+
+read -p "Хотите перезагрузиться сейчас? [y/N]: " reboot
 read -p "После перезагрузки необходимо будет прописать \"sudo modprobe v4l2loopback\""
-if [[ $reboot == "y" ]]; then
+if [[ $reboot == "y" ]] && [[ $reboot == "Y" ]]; then
     reboot
 fi
