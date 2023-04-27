@@ -5,6 +5,14 @@ helptxt() {
     echo 'Возможные устройства:'
     v4l2-ctl --list-devices
 }
+getsdevice() {
+    sdevice=$(v4l2-ctl --list-devices 2> /dev/null | awk '/v4l2/ { getline; print $1}')
+    if [[ -z $sdevice ]]; then
+        echo "У вас не включен v4l2loopback:"
+        echo -e "\t sudo modprobe v4l2loopback"
+        exit 1
+    fi
+}
 
 for i in $(seq 1 9); do
     if [[ "${!i}" = "-c" ]]; then
@@ -35,7 +43,7 @@ while [[ -n "$1" ]]; do
 done
 
 if [[ -z $device ]] && [[ -z $stream ]] && [[ -n $1 ]]; then
-    device=/dev/video0
+    device=$(v4l2-ctl --list-devices | awk '/usb/ { getline; print $1}')
     echo "Используется устройство по умолчанию - /dev/video0"
     echo "Другие варианты:"
     v4l2-ctl --list-devices
@@ -60,12 +68,12 @@ elif [[ $video ]]; then
     echo "Видео снято"
 
 elif [[ $stream ]]; then
-    sdevice=$(v4l2-ctl --list-devices | awk '/v4l2/ { getline; print $1}')
+    getsdevice
     if [[ $XDG_BACKEND = "wayland" ]]; then
         echo "Нажмите Ctrl+C, чтобы завершить"
         wf-recorder --muxer=v4l2 --codec=rawvideo -t --file=/dev/video2 -x yuv420pq
     else
-        echo "Нажмите Ctrl+C, чтобы завершить"
-        ffmpeg -f x11grab -select_region 1 -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 /dev/video2
+        echo "Нажмите q, чтобы завершить"
+        ffmpeg -hide_banner -loglevel error -f x11grab -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 /dev/video2
     fi
 fi

@@ -36,10 +36,12 @@ if [[ $dep == "y" ]] || [[ $dep == "Y" ]] || [[ -z $dep ]]; then
     else
         echo "Ваша система еще не поддерживается скриптом"
     fi
+    echo "v4l2loopback" | sudo tee /etc/modules-load.d/v4l2loopback.conf
 fi
 
 read -p "Хотите перезагрузиться сейчас? [y/N]: " reboot
 read -p "После перезагрузки необходимо будет прописать \"sudo modprobe v4l2loopback\""
-if [[ $reboot == "y" ]] && [[ $reboot == "Y" ]]; then
+if [[ $reboot == "y" ]] || [[ $reboot == "Y" ]]; then
+    echo "Перезагружаемся"
     reboot
 fi
