@@ -22,7 +22,7 @@ bash -c "$(wget -qO- https://raw.githubusercontent.com/spl3g/webcop/master/insta
 #+begin_src
 sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms
 #+end_src
-*** Arch & derivatives
+*** Asahi & derivatives
 #+begin_src
 sudo pacman -Sy ffmpeg v4l-utils v4l2loopback-dkms
 #+end_src
