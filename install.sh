@@ -37,7 +37,6 @@ if [[ $dep == "y" ]] || [[ $dep == "Y" ]] || [[ -z $dep ]]; then
         echo "Ваша система еще не поддерживается скриптом"
     fi
     echo "v4l2loopback" | sudo tee /etc/modules-load.d/v4l2loopback.conf
-    sudo echo "v4l2loopback" > /etc/modules-load.d/v4l2loopback.conf
 fi
 
 read -p "Хотите перезагрузиться сейчас? [y/N]: " reboot
