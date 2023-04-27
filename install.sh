@@ -30,17 +30,17 @@ if [[ $dep == "y" ]] || [[ $dep == "Y" ]] || [[ -z $dep ]]; then
 
     if [[ $os =~ "Ubuntu" ]] || [[ $os =~ "Debian" ]]; then
         sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms linux-headers
-    elif [[ $os =~ "Arch" ]] || [[ $os =~ "Mangaro" ]] || [[ $os =~ "Endeavour" ]]; then
+    elif [[ $os =~ "Arch" ]] || [[ $os =~ "MangaroLinux" ]] || [[ $os =~ "Endeavour" ]]; then
         getKernel
         sudo pacman -Sy --needed ffmpeg v4l-utils v4l2loopback-dkms $kernel
     else
         echo "Ваша система еще не поддерживается скриптом"
     fi
     echo "v4l2loopback" | sudo tee /etc/modules-load.d/v4l2loopback.conf
+    sudo echo "v4l2loopback" > /etc/modules-load.d/v4l2loopback.conf
 fi
 
 read -p "Хотите перезагрузиться сейчас? [y/N]: " reboot
-read -p "После перезагрузки необходимо будет прописать \"sudo modprobe v4l2loopback\""
 if [[ $reboot == "y" ]] || [[ $reboot == "Y" ]]; then
     echo "Перезагружаемся"
     reboot
