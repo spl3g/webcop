@@ -124,12 +124,10 @@ elif [[ $photo ]]; then
 elif [[ $video ]] && [[ $output ]]; then
     echo 'Нажмите q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -r 30 -s 1920x1080 -i $device $output
-    ffplay $device
     echo "Видео снято"
 elif [[ $video ]]; then
     echo 'Нажмите q, чтобы завершить'
     ffmpeg -hide_banner -loglevel error -f v4l2 -framerate 30 -video_size 1920x1080 -i $device video.mp4
-    ffplay $device
     echo "Видео снято"
 #+end_src
 ** Стрим
@@ -141,7 +139,7 @@ elif [[ $stream ]]; then
         wf-recorder --muxer=v4l2 --codec=rawvideo -t --file=/dev/video2 -x yuv420pq
     else
         echo "Нажмите q, чтобы завершить"
-        ffmpeg -hide_banner -loglevel error -f x11grab -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 /dev/video2
+        ffmpeg -hide_banner -loglevel error -f x11grab -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 $sdevice
     fi
 fi
 #+end_src
