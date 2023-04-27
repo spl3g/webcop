@@ -30,7 +30,7 @@ if [[ $dep == "y" ]] || [[ $dep == "Y" ]] || [[ -z $dep ]]; then
 
     if [[ $os =~ "Ubuntu" ]] || [[ $os =~ "Debian" ]]; then
         sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms linux-headers
-    elif [[ $os =~ "Arch" ]] || [[ $os =~ "MangaroLinux" ]] || [[ $os =~ "Endeavour" ]]; then
+    elif [[ $os =~ "Arch" ]] || [[ $os =~ "Manjaro" ]] || [[ $os =~ "Endeavour" ]]; then
         getKernel
         sudo pacman -Sy --needed ffmpeg v4l-utils v4l2loopback-dkms $kernel
     else
