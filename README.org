@@ -49,7 +49,7 @@ sudo modprobe v4l2loopback
 | -v    | video=<true/false>          | режим видеосъемки      |
 | -o    | output=<имя файла>          | файл                   |
 * Строение скрипта
-./webcop ключи
+./webcop <ключи>
 ** Функции
 #+begin_src bash
 #!/bin/bash
@@ -85,6 +85,11 @@ done
 
 ** Сбор переменных
 #+begin_src bash
+if [[ -z $1 ]]; then
+    helptxt
+    exit 1
+fi
+
 while [[ -n "$1" ]]; do
     case "$1" in
     -p) photo=true ;;
@@ -93,7 +98,8 @@ while [[ -n "$1" ]]; do
         shift ;;
     -d) device=$2
         shift ;;
-    -c) shift ;;
+    -c) config=$2
+        shift ;;
     -s) stream=true ;;
     --) shift
         break ;;
@@ -102,44 +108,56 @@ while [[ -n "$1" ]]; do
     shift
 done
 
-if [[ -z $device ]] && [[ -z $stream ]] && [[ -n $1 ]]; then
+if [[ -z "${device}" ]] && [[ -z "${stream}" ]]; then
     device=$(v4l2-ctl --list-devices | awk '/usb/ { getline; print $1}')
-    echo "Используется устройство по умолчанию - /dev/video0"
+    echo "Используется устройство по умолчанию - $device"
     echo "Другие варианты:"
     v4l2-ctl --list-devices
 fi
 #+end_src
 
+
 ** Фото
 #+begin_src bash
 if [[ $photo ]] && [[ $output ]]; then
-    ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 $output
+    ffmpeg -hide_banner -loglevel error -f v4l2 \
+        -i $device -vframes 1 $output
     echo "Фото снято"
 elif [[ $photo ]]; then
-    ffmpeg -hide_banner -loglevel error -f v4l2 -i $device -vframes 1 photo.png
+    ffmpeg -hide_banner -loglevel error -f v4l2 \
+        -i $device -vframes 1 photo.png
     echo "Фото снято"
 #+end_src
+
 ** Видео
 #+begin_src bash
 elif [[ $video ]] && [[ $output ]]; then
     echo 'Нажмите q, чтобы завершить'
-    ffmpeg -hide_banner -loglevel error -f v4l2 -r 30 -s 1920x1080 -i $device $output
+    ffmpeg -hide_banner -loglevel error \
+        -f v4l2 -r 30 -s 1920x1080 \
+        -i $device $output
     echo "Видео снято"
 elif [[ $video ]]; then
     echo 'Нажмите q, чтобы завершить'
-    ffmpeg -hide_banner -loglevel error -f v4l2 -framerate 30 -video_size 1920x1080 -i $device video.mp4
+    ffmpeg -hide_banner -loglevel error \
+        -f v4l2 -framerate 30 -video_size 1920x1080 \
+        -i $device video.mp4
     echo "Видео снято"
 #+end_src
+
 ** Стрим
 #+begin_src bash
 elif [[ $stream ]]; then
     getsdevice
     if [[ $XDG_BACKEND = "wayland" ]]; then
         echo "Нажмите Ctrl+C, чтобы завершить"
-        wf-recorder --muxer=v4l2 --codec=rawvideo -t --file=/dev/video2 -x yuv420pq
+        wf-recorder --muxer=v4l2 --codec=rawvideo \
+            -t --file=$sdevice yuv420pq
     else
         echo "Нажмите q, чтобы завершить"
-        ffmpeg -hide_banner -loglevel error -f x11grab -show_region 1 -framerate 25 -i $DISPLAY -vf format=yuv420p -f v4l2 $sdevice
+        ffmpeg -hide_banner -loglevel error \
+            -f x11grab -show_region 1 -framerate 25 \
+            -i $DISPLAY -vf format=yuv420p -f v4l2 $sdevice
     fi
 fi
 #+end_src
