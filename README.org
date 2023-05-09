@@ -5,6 +5,7 @@
  * Фото
  * Видео
  * Стрим рабочего стола, как отдельного устройства
+ * Испльзование конфига
 * Установка
 ** Автоматическая установка
 #+begin_src
@@ -18,11 +19,11 @@ bash -c "$(wget -qO- https://raw.githubusercontent.com/spl3g/webcop/master/insta
 - linux-headers
 Опциональные для wayland:
 - wf-recorder
-*** Debian & derivatives
+*** Debian-based
 #+begin_src
 sudo apt-get install ffmpeg v4l-utils v4l2loopback-dkms
 #+end_src
-*** Asahi & derivatives
+*** Arch-based
 #+begin_src
 sudo pacman -Sy ffmpeg v4l-utils v4l2loopback-dkms
 #+end_src
